@@ -1,4 +1,6 @@
-import { useState } from "react";
+import Konva from "konva";
+import { useEffect, useRef, useState } from "react";
+import exampleImage from "./assets/example.jpg";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import {
@@ -20,6 +22,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 
 function App() {
   const [imageIndex, setImageIndex] = useState(0);
+  const stageRef = useRef<Konva.Stage>(null!);
+
+  useEffect(() => {
+    stageRef.current = new Konva.Stage({
+      container: "konva-container",
+      width: 830,
+      height: 830,
+    });
+
+    return () => {
+      stageRef.current.destroy();
+    };
+  }, []);
+
+  async function showImageAndCropper() {
+    const htmlImage = new Image();
+    htmlImage.src = exampleImage;
+    await htmlImage.decode();
+
+    const layer = new Konva.Layer();
+    stageRef.current.add(layer);
+
+    const image = new Konva.Image({ image: htmlImage, x: 15, y: 15 });
+    layer.add(image);
+
+    const box = new Konva.Rect({
+      x: 15,
+      y: 15,
+      width: 800,
+      height: 800,
+      stroke: "lightblue",
+      strokeWidth: 1,
+      draggable: true,
+      fillEnabled: true,
+    });
+    layer.add(box);
+
+    const transformer = new Konva.Transformer({
+      rotateEnabled: false,
+      borderEnabled: false,
+      anchorSize: 8,
+      anchorCornerRadius: 4,
+      anchorStroke: "lightblue",
+      keepRatio: false,
+    });
+    transformer.nodes([box]);
+    layer.add(transformer);
+  }
 
   return (
     <div className="h-screen">
@@ -39,7 +89,9 @@ function App() {
             </TabsList>
             <TabsContent value="crop-image" className="flex flex-col gap-1">
               <div className="flex min-h-9 w-80 flex-row items-center gap-1 px-1">
-                <Button size="sm">Import data</Button>
+                <Button size="sm" onClick={showImageAndCropper}>
+                  Import data
+                </Button>
               </div>
               <Separator className="my-1" />
               <div className="flex min-h-9 w-80 flex-row items-center gap-1 px-1">
@@ -107,8 +159,11 @@ function App() {
           </Tabs>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={70} className="bg-muted">
-          Panel 2
+        <ResizablePanel
+          defaultSize={70}
+          className="bg-muted flex items-center justify-center"
+        >
+          <div id="konva-container" className="h-[830px] w-[830px]" />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
